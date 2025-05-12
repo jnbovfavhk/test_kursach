@@ -124,11 +124,11 @@ def detect_and_draw_hog(path, model, path_to_save):
     output_image = draw_detections(test_image, detections)
     cv2.imwrite(path_to_save, output_image)
 
-def classify_face(path, model):
+def classify_face_hog(path, model):
     test_image = cv2.imread(path)
     features = extract_hog_features(test_image)
     print("Это лицо - " + str(model.decision_function([features])))
 
-def classify_face_by_image(image, model):
+def classify_face_hog_by_image(image, model):
     features = extract_hog_features(image)
     print("Это лицо - " + str(model.decision_function([features])))

@@ -12,8 +12,8 @@ from sklearn.ensemble import AdaBoostClassifier
 import cv2
 
 from GeneralMethods import reduct_images_dataset
-from HaarMethods import get_trained_haar_model, detect_and_draw_haar
-from HogMethods import get_trained_hog_model, detect_and_draw_hog, classify_face
+from HaarMethods import get_trained_haar_model, detect_and_draw_haar, classify_face_haar
+from HogMethods import get_trained_hog_model, detect_and_draw_hog
 
 
 def demonstrate_haar():
@@ -30,7 +30,8 @@ def demonstrate_haar():
         print("Модель десериализована")
 
     detect_and_draw_haar("testImages/imageFace1.jpg",
-                               model, "testImages/testImageHaarAt1000TrainFaces.jpg")
+                               model, "testImages/testImageHaarAt2000TrainFaces.jpg")
+    classify_face_haar("testImages/myFace2.jpg", model)
     print("Обнаружены лица на тестовом изображении")
 
 def demonstrate_hog():
@@ -53,4 +54,4 @@ def demonstrate_hog():
 
 
 if __name__ == "__main__":
-    demonstrate_hog()
+    demonstrate_haar()

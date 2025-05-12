@@ -1,10 +1,14 @@
 import torch
 from skimage.feature import haar_like_feature
 from concurrent.futures import ThreadPoolExecutor
+
+from sklearn.feature_selection import VarianceThreshold, SelectKBest
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import AdaBoostClassifier
 import cv2
 from PIL import Image
+from sklearn.pipeline import make_pipeline
+from sklearn.tree import DecisionTreeClassifier
 from torchvision.ops import nms
 
 from GeneralMethods import load_annotations, sliding_window, draw_detections
@@ -71,10 +75,19 @@ def prepare_haar_data(image_paths, labels, batch_size=32):
 
 def train_adaboost_based_on_haar(X, y):
   X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=1)
-  adaboost_classifier = AdaBoostClassifier(n_estimators=100, learning_rate=0.5)
-  adaboost_classifier.fit(X_train, y_train)
+  pipeline = make_pipeline(
+      VarianceThreshold(threshold=0.1),
+      SelectKBest(k=5000),
+      AdaBoostClassifier(
+          estimator=DecisionTreeClassifier(max_depth=2),
+          n_estimators=500,
+          learning_rate=0.5,
+          algorithm="SAMME")
+  )
 
-  return adaboost_classifier
+  pipeline.fit(X_train, y_train)
+
+  return pipeline
 
 
 def extract_haar_features(image, feature_types=None):
@@ -100,7 +113,7 @@ def extract_haar_features(image, feature_types=None):
     return features
 
 
-def detect_faces_haar(image, model, threshold=1.5, max_workers=20):
+def detect_faces_haar(image, model, threshold=0, max_workers=20):
     detections = []
     scores = []
 
@@ -144,11 +157,11 @@ def detect_and_draw_haar(path, model, path_to_save):
     cv2.imwrite(path_to_save, output_image)
 
 
-def classify_face(path, model):
+def classify_face_haar(path, model):
     test_image = cv2.imread(path)
     features = extract_haar_features(test_image)
     print("Это лицо - " + str(model.decision_function([features])))
 
-def classify_face_by_image(image, model):
+def classify_face_haar_by_image(image, model):
     features = extract_haar_features(image)
     print("Это лицо - " + str(model.decision_function([features])))
