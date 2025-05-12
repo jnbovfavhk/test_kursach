@@ -1,9 +1,12 @@
+import torch
 from skimage.feature import haar_like_feature
 from concurrent.futures import ThreadPoolExecutor
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import AdaBoostClassifier
 import cv2
 from PIL import Image
+from torchvision.ops import nms
+
 from GeneralMethods import load_annotations, sliding_window, draw_detections
 import numpy as np
 from GeneralMethods import FaceDataset
@@ -97,15 +100,37 @@ def extract_haar_features(image, feature_types=None):
     return features
 
 
-def detect_faces_haar(image, model):
-  detections = []
-  for (x, y, window) in sliding_window(image):
-      features = extract_haar_features(window)
-      prediction = model.predict([features])
-      if prediction == 1:  # Если предсказано, что это лицо
-          detections.append((x, y, x + window.shape[1], y + window.shape[0]))  # Записываем координаты окна
+def detect_faces_haar(image, model, threshold=1.5, max_workers=20):
+    detections = []
+    scores = []
 
-  return detections
+    windows = list(sliding_window(image))
+
+    # Функция для обработки одного окна
+    def process_window(args):
+        x, y, window = args
+        features = extract_haar_features(window)
+        score = model.decision_function([features])[0]
+        return (x, y, window.shape[1], window.shape[0], score)
+
+    # Многопоточная обработка
+    with ThreadPoolExecutor(max_workers=max_workers) as executor:
+        results = executor.map(process_window, windows)
+
+        for x, y, w, h, score in results:
+            print(f'x = {x}, y = {y}, width = {w}, height = {h}')
+            if score > threshold:
+                detections.append([x, y, x + w, y + h])
+
+                scores.append(score)
+
+    if len(detections) > 0:
+        detections = np.array(detections, dtype=np.float32)
+        scores = np.array(scores, dtype=np.float32)
+        keep = nms(torch.tensor(detections), torch.tensor(scores), iou_threshold=1)
+        print(detections, scores)
+        return detections[keep]
+    return []
 
 
 
@@ -117,3 +142,13 @@ def detect_and_draw_haar(path, model, path_to_save):
     # Отрисовка обнаруженных лиц
     output_image = draw_detections(test_image, detections)
     cv2.imwrite(path_to_save, output_image)
+
+
+def classify_face(path, model):
+    test_image = cv2.imread(path)
+    features = extract_haar_features(test_image)
+    print("Это лицо - " + str(model.decision_function([features])))
+
+def classify_face_by_image(image, model):
+    features = extract_haar_features(image)
+    print("Это лицо - " + str(model.decision_function([features])))

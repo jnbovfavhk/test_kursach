@@ -71,7 +71,21 @@ class FaceDataset(Dataset):
         self.data = []
         self.extract_features_func = extract_features_func
         for i in range(len(image_paths)):
+            img = cv2.imread(image_paths[i])
+            # Отраженное изображение
+            mirrored = cv2.flip(img, 1)
+
+            # Записываем новое изображение в файл в той же папке
+            dir_path = os.path.dirname(image_paths[i])
+            file_name = os.path.splitext(os.path.basename(image_paths[i]))[0]
+            mirrored_img_path = os.path.join(dir_path, f'{file_name}_mirrored.jpg')
+            cv2.imwrite(mirrored_img_path, mirrored)
+
+            # Добавляем путь к оригинальному изображению и метку
             self.data.append((image_paths[i], labels[i]))
+
+            # Добавляем путь к зеркальной его копии
+            self.data.append((mirrored_img_path, labels[i]))
 
         print("FaceDataset инициализирован. длина массива данных: " + str(len(self.data)))
 
@@ -126,17 +140,24 @@ def sliding_window(image, min_window_size=None, max_window_size=None, aspect_rat
             width_to_height_ratio = window_width / window_height
             height_to_width_ratio = window_height / window_width
 
-            step_size = window_width
+            step_size = window_width // 2
             # Проверяем, что хотя бы одно из соотношений в заданном интервале(где может находится лицо)
             if (aspect_ratio[0] <= width_to_height_ratio <= aspect_ratio[1]) or \
                     (aspect_ratio[0] <= height_to_width_ratio <= aspect_ratio[1]):
                 for y in range(0, image.shape[0] - window_height + 1, step_size):
                     for x in range(0, image.shape[1] - window_width + 1, step_size):
-                        print(f'x = {x}, y = {y}, width = {window_width}, height = {window_height}')
+                        # print(f'x = {x}, y = {y}, width = {window_width}, height = {window_height}')
                         yield (x, y, image[y:y + window_height, x:x + window_width])
 
 
 def draw_detections(image, detections):
-    for (x1, y1, x2, y2) in detections:
-        cv2.rectangle(image, (x1, y1), (x2, y2), (255, 0, 0), 2)  # Рисуем прямоугольник
+    detections = np.array(detections, dtype=int)
+    if len(detections) == 0:
+        return
+    if type(detections[0]) != np.int64:
+        for (x1, y1, x2, y2) in detections:
+            cv2.rectangle(image, (x1, y1), (x2, y2), (255, 0, 0), 2)  # Рисуем прямоугольник
+    else:
+        x1, y1, x2, y2 = detections.tolist()
+        cv2.rectangle(image, (x1, y1), (x2, y2), (255, 0, 0), 2)
     return image

@@ -13,7 +13,7 @@ import cv2
 
 from GeneralMethods import reduct_images_dataset
 from HaarMethods import get_trained_haar_model, detect_and_draw_haar
-from HogMethods import get_trained_hog_model, detect_and_draw_hog
+from HogMethods import get_trained_hog_model, detect_and_draw_hog, classify_face
 
 
 def demonstrate_haar():
@@ -35,7 +35,7 @@ def demonstrate_haar():
 
 def demonstrate_hog():
     images_path, labels_path = reduct_images_dataset("celebA_and_dtd(textures)/faces",
-                                                     "celebA_and_dtd(textures)/images", 3000)
+                                                     "celebA_and_dtd(textures)/images", 5000)
 
     if not os.path.isfile('models/hog_trained.pkl'):
         model = get_trained_hog_model(images_path, labels_path)
@@ -45,8 +45,10 @@ def demonstrate_hog():
         model = joblib.load('models/hog_trained.pkl')
         print("Модель десериализована")
 
-    detect_and_draw_hog("testImages/imageFace1.jpg",
-                         model, "testImages/testImageHogAt3000TrainFaces.jpg")
+    detect_and_draw_hog("testImages/testImage3.jpg",
+                         model, "testImages/testImage3HogAt10000TrainFaces.jpg")
+    # classify_face("testImages/myFace2.jpg", model)
+
     print("Обнаружены лица на тестовом изображении")
 
 
