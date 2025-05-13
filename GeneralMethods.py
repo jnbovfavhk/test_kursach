@@ -105,6 +105,7 @@ class FaceDataset(Dataset):
 
         return features, label
 
+    # Для обработки батча изображений
     def get_batch(self, indices):
         batch_images = []
         batch_labels = []

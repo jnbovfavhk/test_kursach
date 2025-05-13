@@ -54,40 +54,39 @@ def extract_haar_features_batch(images, feature_types=None):
 
 
 def prepare_haar_data(image_paths, labels, batch_size=32):
-  X, y = [], []
-  dataset = FaceDataset(image_paths, labels, extract_haar_features_batch)
+    X, y = [], []
+    dataset = FaceDataset(image_paths, labels, extract_haar_features_batch)
 
-  indices = list(range(len(dataset)))
-  batches = [indices[i:i + batch_size] for i in range(0, len(indices), batch_size)]
+    indices = list(range(len(dataset)))
+    batches = [indices[i:i + batch_size] for i in range(0, len(indices), batch_size)]
 
-  i = 0
-  with ThreadPoolExecutor(max_workers=5) as executor:
-    results = executor.map(dataset.get_batch, batches)
+    i = 0
+    with ThreadPoolExecutor(max_workers=5) as executor:
+        results = executor.map(dataset.get_batch, batches)
 
-    for features_batch, label_batch in results:
-        i += 1
-        X.extend(features_batch)
-        y.extend(label_batch)
-        print("Готово - " + str(i))
+        for features_batch, label_batch in results:
+            i += 1
+            X.extend(features_batch)
+            y.extend(label_batch)
+            print("Готово - " + str(i))
 
-  return np.array(X), np.array(y)
+    return np.array(X), np.array(y)
 
 
 def train_adaboost_based_on_haar(X, y):
-  X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=1)
-  pipeline = make_pipeline(
-      VarianceThreshold(threshold=0.1),
-      SelectKBest(k=5000),
-      AdaBoostClassifier(
-          estimator=DecisionTreeClassifier(max_depth=2),
-          n_estimators=500,
-          learning_rate=0.5,
-          algorithm="SAMME")
-  )
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=1)
+    pipeline = make_pipeline(
+        VarianceThreshold(threshold=0.1),
+        SelectKBest(k=5000),
+        AdaBoostClassifier(
+            estimator=DecisionTreeClassifier(max_depth=2),
+            n_estimators=500,
+            learning_rate=0.5)
+    )
 
-  pipeline.fit(X_train, y_train)
+    pipeline.fit(X_train, y_train)
 
-  return pipeline
+    return pipeline
 
 
 def extract_haar_features(image, feature_types=None):
@@ -107,13 +106,14 @@ def extract_haar_features(image, feature_types=None):
     features = []
     for feature_type in feature_types:
         # Извлечение признаков Хаара соответствующих типов в виде вектора
-        feats = haar_like_feature(integral, feature_type=feature_type, height=integral.shape[0], width=integral.shape[1], r=0, c=0)
+        feats = haar_like_feature(integral, feature_type=feature_type, height=integral.shape[0],
+                                  width=integral.shape[1], r=0, c=0)
         features.extend(feats)
 
     return features
 
 
-def detect_faces_haar(image, model, threshold=0, max_workers=20):
+def detect_faces_haar(image, model, threshold=0.3, max_workers=10):
     detections = []
     scores = []
 
@@ -146,7 +146,6 @@ def detect_faces_haar(image, model, threshold=0, max_workers=20):
     return []
 
 
-
 def detect_and_draw_haar(path, model, path_to_save):
     # Обнаружение лиц на новом изображении
     test_image = cv2.imread(path)
@@ -161,6 +160,7 @@ def classify_face_haar(path, model):
     test_image = cv2.imread(path)
     features = extract_haar_features(test_image)
     print("Это лицо - " + str(model.decision_function([features])))
+
 
 def classify_face_haar_by_image(image, model):
     features = extract_haar_features(image)
