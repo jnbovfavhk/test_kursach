@@ -8,13 +8,16 @@ import cv2
 
 
 def reduct_images_dataset(faces_path, images_path, new_size):
-    # Получаем список всех имен файлов в указанной папке
+
     files_faces_path = [f for f in os.listdir(faces_path)]
     files_images_path = [f for f in os.listdir(images_path)]
 
     # Проверяем, достаточно ли файлов в папке
     if len(files_faces_path) < new_size or len(files_images_path) < new_size:
         raise ValueError("Недостаточно файлов в папке для выбора.")
+
+    if len(files_faces_path) == new_size:
+        return
 
     # Случайно выбираем указанное количество файлов из каждой папки
     selected_files1 = random.sample(files_faces_path, new_size)
@@ -154,7 +157,7 @@ def sliding_window(image, min_window_size=None, max_window_size=None, aspect_rat
 def draw_detections(image, detections):
     detections = np.array(detections, dtype=int)
     if len(detections) == 0:
-        return
+        return image
     if type(detections[0]) != np.int64:
         for (x1, y1, x2, y2) in detections:
             cv2.rectangle(image, (x1, y1), (x2, y2), (255, 0, 0), 2)  # Рисуем прямоугольник

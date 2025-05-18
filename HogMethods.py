@@ -80,7 +80,6 @@ def train_svm_based_on_hog(X, y):
         LinearSVC(
             C=0.01,
             penalty='l2',  # Норма регуляризации
-            class_weight='balanced',
             max_iter=10000,
             verbose=1
         )
@@ -94,11 +93,12 @@ def train_svm_based_on_hog(X, y):
     return pipeline
 
 
-def detect_faces_hog(image, model, threshold=1.5):
+def detect_faces_hog(image, model, threshold=1):
     detections = []
     scores = []
 
     for (x, y, window) in sliding_window(image):
+        print(f'x = {x}, y = {y}, width = {window.shape[1]}, height = {window.shape[0]}')
         features = extract_hog_features(window)
         score = model.decision_function([features])[0]  # Извлекаем коэффициент уверенности
         if score > threshold:
@@ -124,10 +124,12 @@ def detect_and_draw_hog(path, model, path_to_save):
     output_image = draw_detections(test_image, detections)
     cv2.imwrite(path_to_save, output_image)
 
+
 def classify_face_hog(path, model):
     test_image = cv2.imread(path)
     features = extract_hog_features(test_image)
     print("Это лицо - " + str(model.decision_function([features])))
+
 
 def classify_face_hog_by_image(image, model):
     features = extract_hog_features(image)
